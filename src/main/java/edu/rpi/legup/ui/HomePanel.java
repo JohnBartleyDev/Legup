@@ -1,16 +1,28 @@
 package edu.rpi.legup.ui;
 
+import edu.rpi.legup.app.GameBoardFacade;
+import edu.rpi.legup.app.LegupPreferences;
+import edu.rpi.legup.save.InvalidFileFormatException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.InputEvent;
+import java.io.File;
 
-public class HomePanel extends LegupPanel {
+public class HomePanel extends LegupPanel  {
     private LegupUI legupUI;
     private JFrame frame;
     private JButton[] buttons;
     private JLabel[] text;
     private JMenuBar menuBar;
+    private JFileChooser folderBrowser;
 
     private final int buttonSize = 100;
+
+    private final static Logger LOGGER = LogManager.getLogger(ProofEditorPanel.class.getName());
+
 
     public HomePanel(FileDialog fileDialog, JFrame frame, LegupUI legupUI) {
         this.legupUI = legupUI;
@@ -77,6 +89,7 @@ public class HomePanel extends LegupPanel {
         this.buttons[0].setIcon(resizeButtonIcon(button0Icon, this.buttonSize, this.buttonSize));
         this.buttons[0].setHorizontalTextPosition(AbstractButton.CENTER);
         this.buttons[0].setVerticalTextPosition(AbstractButton.BOTTOM);
+        this.buttons[0].addActionListener((ActionEvent) -> openPuzzleDirectory());
         this.buttons[0].addActionListener(l -> this.legupUI.displayPanel(1));
 
         this.buttons[1] = new JButton("New Puzzle") {
@@ -89,6 +102,7 @@ public class HomePanel extends LegupPanel {
         this.buttons[1].setIcon(resizeButtonIcon(button1Icon, this.buttonSize, this.buttonSize));
         this.buttons[1].setHorizontalTextPosition(AbstractButton.CENTER);
         this.buttons[1].setVerticalTextPosition(AbstractButton.BOTTOM);
+        this.buttons[1].addActionListener((ActionEvent) -> openPuzzleDirectory());
         this.buttons[1].addActionListener(l -> this.openNewPuzzleDialog());
 
         this.buttons[2] = new JButton("Edit Puzzle") {
@@ -102,6 +116,7 @@ public class HomePanel extends LegupPanel {
         this.buttons[2].setHorizontalTextPosition(AbstractButton.CENTER);
         this.buttons[2].setVerticalTextPosition(AbstractButton.BOTTOM);
         this.buttons[2].addActionListener(l -> this.legupUI.displayPanel(2)); // PLACEHOLDER
+//        this.buttons[2].addActionListener((ActionEvent) -> openPuzzleDirectory());
 
         for (int i = 0; i < this.buttons.length - 1; i++) { // -1 to avoid the batch grader button
             //this.buttons[i].setPreferredSize(new Dimension(100, 100));
@@ -180,6 +195,43 @@ public class HomePanel extends LegupPanel {
                     "ERROR: Invalid Dimensions",
                     JOptionPane.ERROR_MESSAGE);
             throw new IllegalArgumentException(exception.getMessage());
+        }
+    }
+
+    public void openPuzzleDirectory() {
+        GameBoardFacade facade = GameBoardFacade.getInstance();
+
+        LegupPreferences preferences = LegupPreferences.getInstance();
+        File preferredDirectory = new File(preferences.getUserPref(LegupPreferences.WORK_DIRECTORY));
+        folderBrowser = new JFileChooser(preferredDirectory);
+        folderBrowser.setDialogTitle("Select Proof File");
+        folderBrowser.showOpenDialog(this);
+        folderBrowser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+        folderBrowser.setAcceptAllFileFilterUsed(true);
+        folderBrowser.setVisible(true);
+
+        String fileName = null;
+        File puzzleFile = folderBrowser.getSelectedFile();
+        if (folderBrowser.getCurrentDirectory() != null && folderBrowser.getSelectedFile().getName() != null) {
+            fileName = puzzleFile.getAbsolutePath() + File.separator;
+            puzzleFile = new File(fileName);
+        }
+
+        if (puzzleFile != null && puzzleFile.exists()) {
+            try {
+                GameBoardFacade.getInstance().loadPuzzle(fileName);
+                String puzzleName = GameBoardFacade.getInstance().getPuzzleModule().getName();
+                frame.setTitle(puzzleName + " - " + puzzleFile.getName());
+            }
+            catch (InvalidFileFormatException e) {
+                LOGGER.error(e.getMessage());
+                if (e.getMessage().contains("Proof Tree construction error: could not find rule by ID")) { // TO DO: make error message not hardcoded
+                    JOptionPane.showMessageDialog(null, "This file runs on an outdated version of Legup\nand is not compatible with the current version.", "Error", JOptionPane.ERROR_MESSAGE);
+                }
+                else {
+                    JOptionPane.showMessageDialog(null, "File does not exist or it cannot be read", "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            }
         }
     }
 }

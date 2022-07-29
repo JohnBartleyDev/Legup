@@ -137,7 +137,6 @@ public class PreferencesDialog extends JDialog {
         contentPane.add(createLeftLabel("Board View Preferences"));
         contentPane.add(createLineSeparator());
         showMistakes = new JCheckBox("Show Mistakes", Boolean.valueOf(prefs.getUserPref(LegupPreferences.SHOW_MISTAKES)));
-        showMistakes.addItemListener(this);
         showMistakes.setToolTipText("If checked this show incorrectly applied rule applications in red on the board");
         JPanel showMistakesRow = new JPanel();
         showMistakesRow.setLayout(new BorderLayout());

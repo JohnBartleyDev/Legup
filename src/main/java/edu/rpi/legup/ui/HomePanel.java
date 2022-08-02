@@ -1,9 +1,14 @@
 package edu.rpi.legup.ui;
 
 import edu.rpi.legup.app.GameBoardFacade;
+import edu.rpi.legup.save.InvalidFileFormatException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.io.File;
 
 public class HomePanel extends LegupPanel {
     private LegupUI legupUI;
@@ -11,6 +16,9 @@ public class HomePanel extends LegupPanel {
     private JButton[] buttons;
     private JLabel[] text;
     private JMenuBar menuBar;
+    private FileDialog fileDialog;
+    private final static Logger LOGGER = LogManager.getLogger(PuzzleEditorPanel.class.getName());
+
 
     private final int buttonSize = 100;
 
@@ -79,7 +87,8 @@ public class HomePanel extends LegupPanel {
         this.buttons[0].setIcon(resizeButtonIcon(button0Icon, this.buttonSize, this.buttonSize));
         this.buttons[0].setHorizontalTextPosition(AbstractButton.CENTER);
         this.buttons[0].setVerticalTextPosition(AbstractButton.BOTTOM);
-        this.buttons[0].addActionListener(l -> this.legupUI.displayPanel(1));
+        this.buttons[0].addActionListener((ActionEvent) -> promptPuzzle());
+        this.buttons[0].addActionListener((ActionEvent) -> this.legupUI.displayPanel(1));
 
         this.buttons[1] = new JButton("New Puzzle") {
             {
@@ -91,7 +100,8 @@ public class HomePanel extends LegupPanel {
         this.buttons[1].setIcon(resizeButtonIcon(button1Icon, this.buttonSize, this.buttonSize));
         this.buttons[1].setHorizontalTextPosition(AbstractButton.CENTER);
         this.buttons[1].setVerticalTextPosition(AbstractButton.BOTTOM);
-        this.buttons[1].addActionListener(l -> this.openNewPuzzleDialog());
+        this.buttons[1].addActionListener((ActionEvent) -> promptPuzzle());
+        this.buttons[1].addActionListener((ActionEvent) -> this.openNewPuzzleDialog());
 
         this.buttons[2] = new JButton("Edit Puzzle") {
             {
@@ -103,7 +113,8 @@ public class HomePanel extends LegupPanel {
         this.buttons[2].setIcon(resizeButtonIcon(button2Icon, this.buttonSize, this.buttonSize));
         this.buttons[2].setHorizontalTextPosition(AbstractButton.CENTER);
         this.buttons[2].setVerticalTextPosition(AbstractButton.BOTTOM);
-        this.buttons[2].addActionListener(l -> this.legupUI.displayPanel(2)); // PLACEHOLDER
+        this.buttons[2].addActionListener((ActionEvent) -> promptPuzzle());
+        this.buttons[2].addActionListener((ActionEvent) -> this.legupUI.displayPanel(2)); // PLACEHOLDER
 
         for (int i = 0; i < this.buttons.length - 1; i++) { // -1 to avoid the batch grader button
             //this.buttons[i].setPreferredSize(new Dimension(100, 100));
@@ -168,6 +179,33 @@ public class HomePanel extends LegupPanel {
         cpd.setVisible(true);
     }
 
+    public void promptPuzzle() {
+        GameBoardFacade facade = GameBoardFacade.getInstance();
+
+        if (fileDialog == null) {
+            fileDialog = new FileDialog(this.frame);
+        }
+        fileDialog.setMode(FileDialog.LOAD);
+        fileDialog.setTitle("Select Puzzle");
+        fileDialog.setVisible(true);
+        String fileName = null;
+        File puzzleFile = null;
+        if (fileDialog.getDirectory() != null && fileDialog.getFile() != null) {
+            fileName = fileDialog.getDirectory() + File.separator + fileDialog.getFile();
+            puzzleFile = new File(fileName);
+        }
+
+        if (puzzleFile != null && puzzleFile.exists()) {
+            try {
+                GameBoardFacade.getInstance().loadPuzzleEditor(fileName);
+                String puzzleName = GameBoardFacade.getInstance().getPuzzleModule().getName();
+                frame.setTitle(puzzleName + " - " + puzzleFile.getName());
+            }
+            catch (InvalidFileFormatException e) {
+                LOGGER.error(e.getMessage());
+            }
+        }
+    }
     public void openEditorWithNewPuzzle(String game, int rows, int columns) throws IllegalArgumentException {
         // Validate the dimensions
         GameBoardFacade facade = GameBoardFacade.getInstance();

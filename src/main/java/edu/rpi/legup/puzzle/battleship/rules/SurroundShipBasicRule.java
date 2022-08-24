@@ -14,29 +14,89 @@ public class SurroundShipBasicRule extends BasicRule {
                 "edu/rpi/legup/images/battleship/rules/SurroundShip.png");
     }
 
-    /**
-     * Checks whether the child node logically follows from the parent node
-     * at the specific puzzleElement index using this rule
-     * This method is the one that should overridden in child classes
+     /**
+     * Checks whether the transition has a contradiction at the specific
+     * {@link PuzzleElement} index using this rule.
      *
+     * @param board         board to check rule
      * @param transition    transition to check
-     * @param puzzleElement equivalent puzzleElement
-     * @return null if the child node logically follow from the parent node at the specified puzzleElement,
-     * otherwise error message
+     * @param puzzleElement equivalent {@link PuzzleElement}
+     * @return null if logicially follows from parent, otherwise return error message
      */
     @Override
-    protected String checkRuleRawAt(TreeTransition transition, PuzzleElement puzzleElement) {
-        return null;
-    }
-
-    /**
-     * Creates a transition {@link Board} that has this rule applied to it using the {@link TreeNode}.
-     *
-     * @param node tree node used to create default transition board
-     * @return default board or null if this rule cannot be applied to this tree node
-     */
-    @Override
-    public Board getDefaultBoard(TreeNode node) {
-        return null;
+    public String checkRuleRawAt(Board board, PuzzleElement puzzleElement) {
+        BattleshipBoard bsBoard = (BattleshipBoard) board;
+        BattleshipCell cell = (BattleshipCell) bsBoard.getPuzzleElement(puzzleElement);
+        //checks for ships
+        if (!BattleshipType.isShip(cell.getType())) {
+            return null;
+        }
+        
+        //submarine check
+        if(cell.getType() == SHIP_SIZE_1){
+            List<BattleshipCell> orthoAdjCells= bsBoard.getAdjOrthogonals(cell);
+            BattleshipCell up = orthoAdjCells.get(0);
+            if((up.getType()!=WATER)){
+                return super.getInvalidUseOfRuleMessage() + ": This ship must be surrounded by water";
+            }
+            BattleshipCell right = orthoAdjCells.get(1);
+            if((right.getType()!=WATER)){
+                return super.getInvalidUseOfRuleMessage() + ": This ship must be surrounded by water";
+            }
+            BattleshipCell down = orthoAdjCells.get(2);
+            if((down.getType()!=WATER)){
+                return super.getInvalidUseOfRuleMessage() + ": This ship must be surrounded by water";
+            }
+            BattleshipCell left = orthoAdjCells.get(3);
+            if((left.getType()!=WATER)){
+                return super.getInvalidUseOfRuleMessage() + ": This ship must be surrounded by water";
+            }
+            return null;
+        }
+        //checks ship from top segment going down
+        if(cell.getType() == SHIP_SEGMENT_TOP){
+            List<BattleshipCell> orthoAdjCells= bsBoard.getAdjOrthogonals(cell);
+            //checks all left and right adjacent cells to make sure they are surronded by water
+            while(orthoAdjCells.get(2).getType == SHIP_SEGMENT_MIDDLE){
+                if(orthoAdjCells.get(1)!= WATER){
+                    return super.getInvalidUseOfRuleMessage() + ": This ship must be surrounded by water";
+                }
+                if(orthoAdjCells.get(3)!= WATER){
+                    return super.getInvalidUseOfRuleMessage() + ": This ship must be surrounded by water";
+                }
+                List<BattleshipCell> orthoAdjCells= bsBoard.getAdjOrthogonals(cell);
+            }
+            //Final ship surround cell check
+            if(orthoAdjCells.get(1)!= WATER){
+                return super.getInvalidUseOfRuleMessage() + ": This ship must be surrounded by water";
+            }
+            if(orthoAdjCells.get(3)!= WATER){
+                return super.getInvalidUseOfRuleMessage() + ": This ship must be surrounded by water";
+            }
+            
+        }
+        //checks ship from leftmost cell going right
+        if(cell.getType() == SHIP_SEGMENT_LEFT){
+            List<BattleshipCell> orthoAdjCells= bsBoard.getAdjOrthogonals(cell);
+            //checks all up and down adjacent cells to make sure they are surronded by water
+            while(orthoAdjCells.get(1).getType == SHIP_SEGMENT_MIDDLE){
+                if(orthoAdjCells.get(2)!= WATER){
+                    return super.getInvalidUseOfRuleMessage() + ": This ship must be surrounded by water";
+                }
+                if(orthoAdjCells.get(0)!= WATER){
+                    return super.getInvalidUseOfRuleMessage() + ": This ship must be surrounded by water";
+                }
+                List<BattleshipCell> orthoAdjCells= bsBoard.getAdjOrthogonals(cell);
+            }
+            //Final ship surround cell check
+            if(orthoAdjCells.get(2)!= WATER){
+                return super.getInvalidUseOfRuleMessage() + ": This ship must be surrounded by water";
+            }
+            if(orthoAdjCells.get(0)!= WATER){
+                return super.getInvalidUseOfRuleMessage() + ": This ship must be surrounded by water";
+            }
+        }
+        
     }
 }
+
